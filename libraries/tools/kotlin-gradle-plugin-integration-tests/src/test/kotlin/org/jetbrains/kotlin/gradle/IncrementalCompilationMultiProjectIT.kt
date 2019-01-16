@@ -251,20 +251,22 @@ open class A {
         }
 
         val bKt = project.projectDir.getFileByName("B.kt")
+        val bKtContent = bKt.readText()
         bKt.delete()
 
         project.build("build") {
             assertFailed()
         }
 
-        project.projectDir.getFileByName("barUseB.kt").delete()
-        project.projectDir.getFileByName("barUseAB.kt").delete()
+        bKt.writeText(bKtContent.replace("fun b", "open fun b"))
+        val affectedFiles = project.projectDir.getFilesByNames(
+            "B.kt", "barUseAB.kt", "barUseB.kt",
+            "BB.kt", "fooUseB.kt"
+        )
 
         project.build("build") {
-            assertFailed()
-            val affectedSources = project.projectDir.allKotlinFiles()
-            val relativePaths = project.relativize(affectedSources)
-            assertCompiledKotlinSources(relativePaths)
+            assertSuccessful()
+            assertCompiledKotlinSources(project.relativize(affectedFiles))
         }
     }
 }
